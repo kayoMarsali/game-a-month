@@ -3,9 +3,25 @@
 #include <memory.h>
 #include "defines.h"
 #include "SDL.h"
+#include "SDL_ttf.h"
 
 
 SDL_Color white = {255, 255, 255, 255};
+SDL_Color grey = {128, 128, 128, 255};
+
+SDL_Surface *ResetSurf = NULL;
+string ResetString = "Press 'R' to Start and Restart the game";
+SDL_Surface *ToggleAISurf = NULL;
+string ToggleAIString = "Press 'I' to toggle Player 2 AI";
+SDL_Surface *WinSurf = NULL;
+string WinString = "You Win!";
+SDL_Surface *LoseSurf = NULL;
+string LoseString = "Game Over!";
+SDL_Surface *p1Surf = NULL;
+string p1String = "P1 - W/S";
+SDL_Surface *p2Surf = NULL;
+string p2String = "Up/Down - P2";
+
 
 typedef struct Paddle {
     f32 x, y;
@@ -20,9 +36,11 @@ typedef struct Ball {
 } Ball;
 
 typedef struct Game {
-    SDL_Window* window;
-    SDL_Renderer* renderer;
+    SDL_Window *window;
+    SDL_Renderer *renderer;
     b8 isRunning;
+
+    TTF_Font *font;
 
     string name;
     u32 x, y, w, h;
@@ -57,6 +75,7 @@ void RenderBoard(void);
 void RenderBall(void);
 void RenderPaddles(void);
 void RenderScore(void);
+void RenderText(void);
 
 void DestroyGameWindow(void);
 
@@ -75,7 +94,7 @@ int main(int argc, char** argv) {
     f64 deltaTime = 0.0;
 
     Setup();
-
+    game->gameover = TRUE;
     while(game->isRunning) {
         frameStartTime = SDL_GetTicks64();
         PollEvents();
@@ -106,19 +125,66 @@ b8 InitializeGameWindow(void) {
     game->w = 1280;
     game->h = 720;
 
-    game->name = "Pong-Like";
+    game->name = "KayoPong";
 
     SDL_Init(SDL_INIT_EVERYTHING);
 
     game->window = SDL_CreateWindow(game->name, game->x, game->y, game->w, game->h, SDL_WINDOW_SHOWN);
     if(!game->window) {
+        printf_s("Window creation failed: %s\n", SDL_GetError());
         return FALSE;
     }
 
     game->renderer = SDL_CreateRenderer(game->window, -1, 0);
     if(!game->renderer) {
+        printf_s("Renderer creation failed: %s\n", SDL_GetError());
         return FALSE;
     }
+
+    TTF_Init();
+
+    game->font = TTF_OpenFont("assets/fonts/OpenSans-Regular.ttf", 35);
+    if(!game->font) {
+        printf_s("Font loading failed: %s\n", TTF_GetError());
+        return FALSE;
+    }
+
+    ResetSurf = TTF_RenderText_Blended(game->font, ResetString, white);
+    if(!ResetSurf) {
+        printf_s("Surface creation failed: %s\n", TTF_GetError());
+        return FALSE;
+    }
+
+    ToggleAISurf = TTF_RenderText_Blended(game->font, ToggleAIString, white);
+    if(!ToggleAISurf) {
+        printf_s("Surface creation failed: %s\n", TTF_GetError());
+        return FALSE;
+    }
+
+    WinSurf = TTF_RenderText_Blended(game->font, WinString, white);
+    if(!WinSurf) {
+        printf_s("Surface creation failed: %s\n", TTF_GetError());
+        return FALSE;
+    }
+
+    LoseSurf = TTF_RenderText_Blended(game->font, LoseString, white);
+    if(!LoseSurf) {
+        printf_s("Surface creation failed: %s\n", TTF_GetError());
+        return FALSE;
+    }
+
+    p1Surf = TTF_RenderText_Blended(game->font, p1String, white);
+    if(!p1Surf) {
+        printf_s("Surface creation failed: %s\n", TTF_GetError());
+        return FALSE;
+    }
+
+    p2Surf = TTF_RenderText_Blended(game->font, p2String, white);
+    if(!p2Surf) {
+        printf_s("Surface creation failed: %s\n", TTF_GetError());
+        return FALSE;
+    }
+
 
     game->isRunning = TRUE;
 
@@ -175,9 +241,7 @@ void PollEvents(void) {
                 Setup();
             }
             if(ev.key.keysym.sym == SDLK_i) {
-                printf_s("'I' released");
                 game->p2IsAI = !game->p2IsAI;
-                Setup();
             }
             if(ev.key.keysym.sym == SDLK_UP || ev.key.keysym.sym == SDLK_DOWN) {
                 if(!game->p2IsAI) {
@@ -211,20 +275,21 @@ void Update(f64 deltaTime) {
     if(game->gameover) {
         return;
     }
-    UpdateBall(deltaTime);
+
     UpdatePaddles(deltaTime);
+    UpdateBall(deltaTime);
     UpdateScore();
 
 }
 void UpdateBall(f64 deltaTime) {
-    if((game->ball.x+game->ball.w > 100) && ((game->ball.h) < game->w-100)) {
+    if((game->ball.x+game->ball.w > 100) && ((game->ball.x) < game->w-100)) {
         if((((game->ball.y + game->ball.h) > (game->h-50)) && game->ball.speed_v > 0) || ((game->ball.y < 50) && game->ball.speed_v < 0)) {
             game->ball.speed_v*=-1.00f;
         }
     }
 
         if((game->ball.x < (game->player1.x + game->player1.w)) && (game->ball.x > game->player1.x)) {
-        if(((game->ball.y+game->ball.h) < (game->player1.y + game->player1.h)) && (game->ball.y > game->player1.y)) {
+        if(((game->ball.y+game->ball.h + 15) < (game->player1.y + game->player1.h)) && (game->ball.y > game->player1.y)) {
             if(game->ball.speed_h < 0) {
                 game->ball.speed_h *= -1.25f;
                 game->ball.speed_v += game->player1.speed_v;
@@ -308,17 +373,14 @@ void UpdateScore(void) {
 void Render(void) {
     SDL_SetRenderDrawColor(game->renderer, 0, 0, 20, 255);
     SDL_RenderClear(game->renderer);
-    SDL_SetRenderDrawColor(game->renderer, white.r, white.g, white.b, white.a);
 
+    SDL_SetRenderDrawColor(game->renderer, grey.r, grey.g, grey.b, grey.a);
     RenderBoard();
-    if(game->gameover) {
-        // TODO: Display "Game Over!" or "You Win!" based on player score. "Press R to Reset Game."
-        SDL_RenderPresent(game->renderer);
-        return;
-    };
+    RenderScore();
+    SDL_SetRenderDrawColor(game->renderer, white.r, white.g, white.b, white.a);
     RenderBall();
     RenderPaddles();
-    RenderScore();
+    RenderText();
 
     SDL_RenderPresent(game->renderer);
 }
@@ -354,7 +416,7 @@ void RenderPaddles(void) {
 
 void RenderScore(void) {
     u32 p1ScoreHPos = game->w/4 - 32;
-    u32 p2ScoreHPos = game->w - (game->w/4 - 32);
+    u32 p2ScoreHPos = game->w - (game->w/4 + 32);
     u32 count = 0;
     SDL_Rect *score = NULL;
 
@@ -579,10 +641,83 @@ winlabel:
 }
 
 
+void RenderText(void) {
+    SDL_Texture *textTexture = NULL;
+    if(game->gameover) {
+        if(game->p1Score == 10) {
+            textTexture = SDL_CreateTextureFromSurface(game->renderer, WinSurf);
+            if(!textTexture) {
+                printf_s("Texture creation failed: %s\n", TTF_GetError());
+                return;
+            }
+            SDL_RenderCopy(game->renderer, textTexture, NULL, &(SDL_Rect){game->w/2 - WinSurf->w/2,
+                                                                          game->h/2 - WinSurf->h/2,
+                                                                          WinSurf->w, WinSurf->h});
+            SDL_DestroyTexture(textTexture);
+            textTexture = NULL;
+        } else if (game->p2Score == 10) {
+            textTexture = SDL_CreateTextureFromSurface(game->renderer, LoseSurf);
+            if(!textTexture) {
+                printf_s("Texture creation failed: %s\n", TTF_GetError());
+                return;
+            }
+            SDL_RenderCopy(game->renderer, textTexture, NULL, &(SDL_Rect){game->w/2 - LoseSurf->w/2,
+                                                                          game->h/2 - LoseSurf->h/2,
+                                                                          LoseSurf->w, LoseSurf->h});
+            SDL_DestroyTexture(textTexture);
+            textTexture = NULL;
+        }
+        textTexture = SDL_CreateTextureFromSurface(game->renderer, ResetSurf);
+            if(!textTexture) {
+                printf_s("Texture creation failed: %s\n", TTF_GetError());
+                return;
+            }
+        SDL_RenderCopy(game->renderer, textTexture, NULL, &(SDL_Rect){game->w/2 - ResetSurf->w/2,
+                                                                          game->h/2 - ResetSurf->h/2 + 100,
+                                                                          ResetSurf->w, ResetSurf->h});
+        SDL_DestroyTexture(textTexture);
+        textTexture = NULL;
+
+    }
+
+    textTexture = SDL_CreateTextureFromSurface(game->renderer, p1Surf);
+    if(!textTexture) {
+        printf_s("Texture creation failed: %s\n", TTF_GetError());
+        return;
+    }
+    SDL_RenderCopy(game->renderer, textTexture, NULL, &(SDL_Rect){25, game->h - 45, p1Surf->w, p1Surf->h});
+    
+    SDL_DestroyTexture(textTexture);
+    textTexture = NULL;
+
+    if(!game->p2IsAI) {
+        textTexture = SDL_CreateTextureFromSurface(game->renderer, p2Surf);
+        if(!textTexture) {
+            printf_s("Texture creation failed: %s\n", TTF_GetError());
+            return;
+        }
+        SDL_RenderCopy(game->renderer, textTexture, NULL, &(SDL_Rect){game->w - p2Surf->w - 25, game->h - 45, p2Surf->w, p2Surf->h});
+        
+        SDL_DestroyTexture(textTexture);
+        textTexture = NULL;
+    }
+
+    textTexture = SDL_CreateTextureFromSurface(game->renderer, ToggleAISurf);
+    if(!textTexture) {
+        printf_s("Texture creation failed: %s\n", TTF_GetError());
+        return;
+    }
+    SDL_RenderCopy(game->renderer, textTexture, NULL, &(SDL_Rect){game->w/2 - ToggleAISurf->w/2, game->h-45, ToggleAISurf->w, ToggleAISurf->h});
+    
+    SDL_DestroyTexture(textTexture);
+    textTexture = NULL;
+
+}
+
+
 void DestroyGameWindow(void) {
     SDL_DestroyRenderer(game->renderer);
     SDL_DestroyWindow(game->window);
     SDL_Quit();
     free(game);
-
 }
