@@ -1,10 +1,14 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <memory.h>
+#include <math.h>
 #include "defines.h"
 #include "SDL.h"
 #include "SDL_ttf.h"
 
+
+#define SPEED_CAP 500
+#define FLOAT_TOLERANCE 0.0001f
 
 SDL_Color white = {255, 255, 255, 255};
 SDL_Color grey = {128, 128, 128, 255};
@@ -58,9 +62,6 @@ typedef struct Game {
 
 Game *game = NULL;
 
-#define SPEED_CAP 500
-#define FLOAT_TOLERANCE 0.0001f
-
 b8 InitializeGameWindow(void);
 void Setup(void);
 void PollEvents(void);
@@ -89,7 +90,7 @@ int main(int argc, char** argv) {
     u64 frameStartTime = 0;
     u64 frameEndTime = 0;
     u64 frameTime = 0;
-    u64 targetFPS = 30;
+    u64 targetFPS = 60;
     u64 frameDelay = 1000 / targetFPS;
     f64 deltaTime = 0.0;
 
@@ -192,6 +193,7 @@ b8 InitializeGameWindow(void) {
 }
 
 void Setup(void) {
+    srand(SDL_GetTicks());
 
     game->ball.x = game->w / 2;
     game->ball.y = game->h / 2;
@@ -199,10 +201,10 @@ void Setup(void) {
     game->ball.w = 15; 
     game->ball.h = 15;
 
-    game->ball.speed_h = 100;
-    game->ball.speed_v = 100;
+    game->ball.speed_h = 200;
+    game->ball.speed_v = ((rand() % 10) - 5) * 20;
 
-    game->player1.x = 50;
+    game->player1.x = 100;
     game->player1.y = game->h/2;
 
     game->player1.w = 15;
@@ -211,7 +213,7 @@ void Setup(void) {
     game->player1.speed_v = 0;
     game->p1Score = 0;
 
-    game->player2.x = game->w - 50;
+    game->player2.x = game->w - 115;
     game->player2.y = game->h/2;
 
     game->player2.w = 15;
@@ -251,19 +253,19 @@ void PollEvents(void) {
             break;
         case SDL_KEYDOWN:
             if(ev.key.keysym.sym == SDLK_w) {
-                game->player1.speed_v = -150;
+                game->player1.speed_v = -175;
             }
             if(ev.key.keysym.sym == SDLK_s) {
-                game->player1.speed_v = 150;
+                game->player1.speed_v = 175;
             }
             if(ev.key.keysym.sym == SDLK_UP) {
                 if(!game->p2IsAI) {
-                    game->player2.speed_v = -150;
+                    game->player2.speed_v = -175;
                 }
             }
             if(ev.key.keysym.sym == SDLK_DOWN) {
                 if(!game->p2IsAI) {
-                    game->player2.speed_v = 150;
+                    game->player2.speed_v = 175;
                 }
             }
             break;
@@ -289,20 +291,20 @@ void UpdateBall(f64 deltaTime) {
     }
 
         if((game->ball.x < (game->player1.x + game->player1.w)) && (game->ball.x > game->player1.x)) {
-        if(((game->ball.y+game->ball.h + 15) < (game->player1.y + game->player1.h)) && (game->ball.y > game->player1.y)) {
+        if(((game->ball.y+game->ball.h) < (game->player1.y + game->player1.h)) && (game->ball.y+15 > game->player1.y)) {
             if(game->ball.speed_h < 0) {
                 game->ball.speed_h *= -1.25f;
-                game->ball.speed_v += game->player1.speed_v;
+                game->ball.speed_v += game->player1.speed_v/2;
                 return;
             }
         }
     }
 
     if(((game->ball.x+game->ball.w) < (game->player2.x + game->player2.w)) && ((game->ball.x + game->ball.w) > game->player2.x)) {
-        if(((game->ball.y+game->ball.h) < (game->player2.y + game->player2.h)) && (game->ball.y > game->player2.y)) {
+        if(((game->ball.y+game->ball.h) < (game->player2.y + game->player2.h)) && (game->ball.y+15 > game->player2.y)) {
             if(game->ball.speed_h > 0) {
                 game->ball.speed_h *= -1.25f;
-                game->ball.speed_v += game->player2.speed_v;
+                game->ball.speed_v += game->player2.speed_v/2;
                 return;
             }
         }
@@ -315,11 +317,11 @@ void UpdateBall(f64 deltaTime) {
 void UpdatePaddles(f64 deltaTime) {
 
     game->player1.y += game->player1.speed_v * deltaTime;
-    if(game->player1.y < 0) {
-        game->player1.y = 0;
+    if(game->player1.y < 50) {
+        game->player1.y = 50;
     }
-    if(game->player1.y > game->h-game->player1.h) {
-        game->player1.y = (game->h-game->player1.h);
+    if(game->player1.y > game->h-game->player1.h-50) {
+        game->player1.y = (game->h-game->player1.h-50);
     }
 
     if(game->p2IsAI) {
@@ -344,11 +346,11 @@ void UpdatePaddles(f64 deltaTime) {
     }
 
     game->player2.y += game->player2.speed_v * deltaTime;
-    if(game->player2.y < 0) {
-        game->player2.y = 0;
+    if(game->player2.y < 50) {
+        game->player2.y = 50;
     }
-    if(game->player2.y > game->h-game->player2.h) {
-        game->player2.y = (game->h-game->player2.h);
+    if(game->player2.y > game->h-game->player2.h-50) {
+        game->player2.y = (game->h-game->player2.h-50);
     }
 }
 
@@ -357,16 +359,16 @@ void UpdateScore(void) {
         game->p1Score++;
         game->ball.x = game->w/2;
         game->ball.y = game->h/2;
-        game->ball.speed_h = -100;
-        game->ball.speed_v = -100;
+        game->ball.speed_h = -200;
+        game->ball.speed_v = -((rand() % 10) - 5) * 20;
     }
 
     if(game->ball.x + game->ball.w < 0) {
         game->p2Score++;
         game->ball.x = game->w/2;
         game->ball.y = game->h/2;
-        game->ball.speed_h = 100;
-        game->ball.speed_v = 100;
+        game->ball.speed_h = 200;
+        game->ball.speed_v = ((rand() % 10) - 5) * 20;
     }
 }
 
