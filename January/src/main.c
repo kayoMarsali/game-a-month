@@ -18,7 +18,7 @@ string ResetString = "Press 'R' to Start and Restart the game";
 SDL_Surface *ToggleAISurf = NULL;
 string ToggleAIString = "Press 'I' to toggle Player 2 AI";
 SDL_Surface *WinSurf = NULL;
-string WinString = "You Win!";
+string WinString = "You  Win!";
 SDL_Surface *LoseSurf = NULL;
 string LoseString = "Game Over!";
 SDL_Surface *p1Surf = NULL;
@@ -380,8 +380,10 @@ void Render(void) {
     RenderBoard();
     RenderScore();
     SDL_SetRenderDrawColor(game->renderer, white.r, white.g, white.b, white.a);
-    RenderBall();
-    RenderPaddles();
+    if(!game->gameover) { 
+        RenderBall();
+        RenderPaddles();
+    };
     RenderText();
 
     SDL_RenderPresent(game->renderer);
@@ -420,7 +422,7 @@ void RenderScore(void) {
     u32 p1ScoreHPos = game->w/4 - 32;
     u32 p2ScoreHPos = game->w - (game->w/4 + 32);
     u32 count = 0;
-    SDL_Rect *score = NULL;
+    SDL_Rect *score = malloc(sizeof(SDL_Rect)*7);;
 
     SDL_Rect p1ScoreDisplay[7] = {{p1ScoreHPos, 100, 64, 16},
                               {p1ScoreHPos, 100, 16, 48},
@@ -433,7 +435,6 @@ void RenderScore(void) {
     switch(game->p1Score) {
         case 0:
             count = 6;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p1ScoreDisplay[0];
             score[1] = p1ScoreDisplay[1];
             score[2] = p1ScoreDisplay[2];
@@ -443,13 +444,11 @@ void RenderScore(void) {
             break;
         case 1:
             count = 2;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p1ScoreDisplay[2];
             score[1] = p1ScoreDisplay[5];
             break;
         case 2:
             count = 5;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p1ScoreDisplay[0];
             score[1] = p1ScoreDisplay[2];
             score[2] = p1ScoreDisplay[3];
@@ -458,7 +457,6 @@ void RenderScore(void) {
             break;
         case 3:
             count = 5;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p1ScoreDisplay[0];
             score[1] = p1ScoreDisplay[2];
             score[2] = p1ScoreDisplay[3];
@@ -467,7 +465,6 @@ void RenderScore(void) {
             break;
         case 4:
             count = 4;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p1ScoreDisplay[1];
             score[1] = p1ScoreDisplay[2];
             score[2] = p1ScoreDisplay[3];
@@ -475,7 +472,6 @@ void RenderScore(void) {
             break;
         case 5:
             count = 5;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p1ScoreDisplay[0];
             score[1] = p1ScoreDisplay[1];
             score[2] = p1ScoreDisplay[3];
@@ -484,7 +480,6 @@ void RenderScore(void) {
             break;
         case 6:
             count = 6;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p1ScoreDisplay[0];
             score[1] = p1ScoreDisplay[1];
             score[2] = p1ScoreDisplay[3];
@@ -494,14 +489,12 @@ void RenderScore(void) {
             break;
         case 7:
             count = 3;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p1ScoreDisplay[0];
             score[1] = p1ScoreDisplay[2];
             score[2] = p1ScoreDisplay[5];
             break;
         case 8:
             count = 7;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p1ScoreDisplay[0];
             score[1] = p1ScoreDisplay[1];
             score[2] = p1ScoreDisplay[2];
@@ -512,7 +505,6 @@ void RenderScore(void) {
             break;
         case 9:
             count = 6;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p1ScoreDisplay[0];
             score[1] = p1ScoreDisplay[1];
             score[2] = p1ScoreDisplay[2];
@@ -525,8 +517,7 @@ void RenderScore(void) {
     }
 
     SDL_RenderFillRects(game->renderer, score, count);
-    free(score);
-    score = NULL;
+    memset(score, 0, sizeof(SDL_Rect)*7);
     count = 0;
 
     SDL_Rect p2ScoreDisplay[7] = {{p2ScoreHPos, 100, 64, 16},
@@ -540,7 +531,6 @@ void RenderScore(void) {
     switch(game->p2Score) {
         case 0:
             count = 6;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p2ScoreDisplay[0];
             score[1] = p2ScoreDisplay[1];
             score[2] = p2ScoreDisplay[2];
@@ -550,13 +540,11 @@ void RenderScore(void) {
             break;
         case 1:
             count = 2;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p2ScoreDisplay[2];
             score[1] = p2ScoreDisplay[5];
             break;
         case 2:
             count = 5;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p2ScoreDisplay[0];
             score[1] = p2ScoreDisplay[2];
             score[2] = p2ScoreDisplay[3];
@@ -565,7 +553,6 @@ void RenderScore(void) {
             break;
         case 3:
             count = 5;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p2ScoreDisplay[0];
             score[1] = p2ScoreDisplay[2];
             score[2] = p2ScoreDisplay[3];
@@ -574,7 +561,6 @@ void RenderScore(void) {
             break;
         case 4:
             count = 4;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p2ScoreDisplay[1];
             score[1] = p2ScoreDisplay[2];
             score[2] = p2ScoreDisplay[3];
@@ -582,7 +568,6 @@ void RenderScore(void) {
             break;
         case 5:
             count = 5;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p2ScoreDisplay[0];
             score[1] = p2ScoreDisplay[1];
             score[2] = p2ScoreDisplay[3];
@@ -591,7 +576,6 @@ void RenderScore(void) {
             break;
         case 6:
             count = 6;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p2ScoreDisplay[0];
             score[1] = p2ScoreDisplay[1];
             score[2] = p2ScoreDisplay[3];
@@ -601,14 +585,12 @@ void RenderScore(void) {
             break;
         case 7:
             count = 3;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p2ScoreDisplay[0];
             score[1] = p2ScoreDisplay[2];
             score[2] = p2ScoreDisplay[5];
             break;
         case 8:
             count = 7;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p2ScoreDisplay[0];
             score[1] = p2ScoreDisplay[1];
             score[2] = p2ScoreDisplay[2];
@@ -619,7 +601,6 @@ void RenderScore(void) {
             break;
         case 9:
             count = 6;
-            score = malloc(sizeof(SDL_Rect)*count);
             score[0] = p2ScoreDisplay[0];
             score[1] = p2ScoreDisplay[1];
             score[2] = p2ScoreDisplay[2];
@@ -638,6 +619,8 @@ void RenderScore(void) {
 return;
 
 winlabel:
+    free(score);
+    score=NULL;
     game->gameover = TRUE;
     return;
 }
@@ -648,21 +631,13 @@ void RenderText(void) {
     if(game->gameover) {
         if(game->p1Score == 10) {
             textTexture = SDL_CreateTextureFromSurface(game->renderer, WinSurf);
-            if(!textTexture) {
-                printf_s("Texture creation failed: %s\n", TTF_GetError());
-                return;
-            }
-            SDL_RenderCopy(game->renderer, textTexture, NULL, &(SDL_Rect){game->w/2 - WinSurf->w/2,
+            SDL_RenderCopy(game->renderer, textTexture, NULL, &(SDL_Rect){12+game->w/2 - WinSurf->w/2,
                                                                           game->h/2 - WinSurf->h/2,
                                                                           WinSurf->w, WinSurf->h});
             SDL_DestroyTexture(textTexture);
             textTexture = NULL;
         } else if (game->p2Score == 10) {
             textTexture = SDL_CreateTextureFromSurface(game->renderer, LoseSurf);
-            if(!textTexture) {
-                printf_s("Texture creation failed: %s\n", TTF_GetError());
-                return;
-            }
             SDL_RenderCopy(game->renderer, textTexture, NULL, &(SDL_Rect){game->w/2 - LoseSurf->w/2,
                                                                           game->h/2 - LoseSurf->h/2,
                                                                           LoseSurf->w, LoseSurf->h});
@@ -670,10 +645,6 @@ void RenderText(void) {
             textTexture = NULL;
         }
         textTexture = SDL_CreateTextureFromSurface(game->renderer, ResetSurf);
-            if(!textTexture) {
-                printf_s("Texture creation failed: %s\n", TTF_GetError());
-                return;
-            }
         SDL_RenderCopy(game->renderer, textTexture, NULL, &(SDL_Rect){game->w/2 - ResetSurf->w/2,
                                                                           game->h/2 - ResetSurf->h/2 + 100,
                                                                           ResetSurf->w, ResetSurf->h});
