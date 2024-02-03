@@ -31,8 +31,8 @@ SET compilerFlags=-O2
 SET defines=-D_RELEASE
 
 :link
-SET includeFlags=-Isrc -I%SDL2%/include -I%SDL2_ttf%/include
-SET linkerFlags= -L%SDL2%/lib/x64 -L%SDL2_ttf%\lib\x64 -lSDL2 -lSDL2main -l:SDL2.dll -lSDL2_ttf -l:SDL2_ttf.dll
+SET includeFlags=-Isrc -I%SDL2%\include -I%SDL2_image%\include -I%SDL2_ttf%\include
+SET linkerFlags= -L%SDL2%/lib/x64 -L%SDL2_image%\lib\x64 -L%SDL2_ttf%\lib\x64 -lSDL2 -lSDL2main -l:SDL2.dll -lSDL2_image -l:SDL2_image.dll -lSDL2_ttf -l:SDL2_ttf.dll
 if not exist "%cd%\bin\%CONFIG%\" mkdir "%cd%\bin\%CONFIG%\"
 
 ECHO "Building %assembly%%..."
