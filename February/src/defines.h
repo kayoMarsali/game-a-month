@@ -19,8 +19,6 @@ typedef double f64;
 typedef char b8;
 typedef int b32;
 
-typedef const char* string;
-
 #define FALSE 0
 #define TRUE 1
 

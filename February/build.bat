@@ -21,7 +21,7 @@ FOR /R %%f in (*.c) do (
 
 echo "Files:" %cFilenames%
 
-SET assembly=KayoPong
+SET assembly=KayoBreaker
 if "%CONFIG%" == "release" goto release
 SET compilerFlags=-g
 SET defines=-D_DEBUG
