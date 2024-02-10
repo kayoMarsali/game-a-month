@@ -13,3 +13,12 @@ the build.bat file assumes SDL2 and SDL2_ttf are path variables.
 -Press 'R' to reset the game.
 
 Escape will close the game.
+
+# February
+Building KayoBreaker, requires SDL2, SDL2_ttf, SDL2_image, and GCC.
+
+
+# Requirements
+SDL2 https://www.libsdl.org/
+SDL2_ttf https://github.com/libsdl-org/SDL_ttf
+SDL2_image https://github.com/libsdl-org/SDL_image

@@ -1,16 +1,26 @@
 #include "game.h"
+#include "objects/paddle.h"
 
 #include <stdio.h>
 
-static Game *game;
+
+Game *game;
+
 static b8 isActive;
+static b8 keyWasPressed[256];
+static b8 keyIsPressed[256];
+
+#define KeyPressed(x) keyIsPressed[x] && !keyWasPressed[x] 
+#define KeyReleased(x) !keyIsPressed[x] && keyWasPressed[x]
+
+void HandleInput(SDL_Event ev);
 
 b8 InitializeGame() {
     game = malloc(sizeof(Game));
     game->x = SDL_WINDOWPOS_CENTERED;
     game->y = SDL_WINDOWPOS_CENTERED;
-    game->w = 1280;
-    game->h = 720;
+    game->w = 800;
+    game->h = 600;
 
     game->name = "KayoBreaker";
 
@@ -19,6 +29,12 @@ b8 InitializeGame() {
     game->window = SDL_CreateWindow(game->name, game->x, game->y, game->w, game->h, SDL_WINDOW_SHOWN);
     if(!game->window) {
         printf_s("Window creation failed: %s\n", SDL_GetError());
+        return FALSE;
+    }
+    isActive = TRUE;
+
+    if(!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
+        printf_s("IMG_Init failed: %s\n", IMG_GetError());
         return FALSE;
     }
 
@@ -36,9 +52,16 @@ b8 InitializeGame() {
         return FALSE;
     }
 
+    game->paddle = malloc(sizeof(Object));
+    if(!game->paddle) {
+        printf_s("failed to allocate memory for paddle object.");
+        return FALSE;
+    }
+    SDL_memset(game->paddle, 0, sizeof(Object));
+    InitializePaddle(game->paddle);
+
 
     game->isRunning = TRUE;
-    isActive = TRUE;
 
     return TRUE;
 }
@@ -50,25 +73,47 @@ Game* GetGame() {
     return NULL;
 }
 
-void UpdateGame() {
+void PollEvents() {
+    SDL_memcpy(keyWasPressed, keyIsPressed, sizeof(keyWasPressed));
+
     SDL_Event ev;
     SDL_PollEvent(&ev);
+
     switch(ev.type) {
         case SDL_QUIT:
             game->isRunning = FALSE;
             break;
         case SDL_KEYUP:
-            if(ev.key.keysym.sym == SDLK_ESCAPE) {
-                game->isRunning = FALSE;
-                break;
-            }
+        case SDL_KEYDOWN:
+            HandleInput(ev);
+            break;
+    }
+}
+
+void UpdateGame() {
+    PollEvents();
+    if(KeyPressed(SDLK_w)) {
+        printf_s("'w' was pressed.\n");
     }
 };
 
+void HandleInput(SDL_Event ev) {
+    switch (ev.type) {
+        case SDL_KEYUP:
+        case SDL_KEYDOWN:
+        SDL_KeyboardEvent key = ev.key;
+        if(key.keysym.sym < 256) {
+            keyIsPressed[key.keysym.sym] = (key.state == SDL_PRESSED);
+        }
+        break;
+    }
+}
 
 void RenderGame() {
     SDL_SetRenderDrawColor(game->renderer, 0, 0, 20, 255);
     SDL_RenderClear(game->renderer);
+    
+    game->paddle->Render(game->paddle->objectData);
 
     SDL_RenderPresent(game->renderer);
 }

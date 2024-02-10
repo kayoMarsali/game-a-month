@@ -1,5 +1,9 @@
 #pragma once
 
+#include <stdio.h>
+#include <direct.h>
+#include <string.h>
+
 //Signed Integer Types
 typedef signed char i8;
 typedef signed short i16;
