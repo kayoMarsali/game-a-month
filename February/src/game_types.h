@@ -17,6 +17,7 @@ typedef enum ObjectTypes {
 typedef struct Object {
     b8 isActive, isRendered;
     ObjectTypes objectType;
+    SDL_Rect rect;
     void *objectData;
 
     void (*Update)(f32, void*);
@@ -51,6 +52,7 @@ typedef struct Game {
     u32 x, y, w, h;
 
     Object *paddle;
+    Object *ball;
 
     u32 score;
     u32 highscore;

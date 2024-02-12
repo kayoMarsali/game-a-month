@@ -5,64 +5,95 @@
 
 
 typedef struct PaddleObject {
-    u32 posX, posY;
-    i32 width, height;
     i32 horizontalVelocity;
-    SDL_Surface *sprite;
+    SDL_Texture *sprite;
 } PaddleObject;
 
-void RenderPaddle(void *objectData);
+void UpdatePaddle(f32 deltaTime, void *paddle);
+void RenderPaddle(void *paddle);
 
 b8 InitializePaddle(Object *outPaddle) {
-    if(outPaddle->objectType != OBJECT_TYPE_NONE || outPaddle->objectData != NULL) {
+    if(OBJECT_TYPE_NONE != outPaddle->objectType || NULL != outPaddle->objectData) {
         printf_s("This object has already been initialized, please destroy the object before reinitializing it.\n");
         return FALSE;
     }
+
     outPaddle->objectType = OBJECT_TYPE_PADDLE;
     outPaddle->objectData = malloc(sizeof(PaddleObject));
     if(NULL == outPaddle->objectData) {
         printf_s("Failed to allocate nessacary memory for Paddle Object.\n");
         return FALSE;
     }
+
     SDL_memset(outPaddle->objectData, 0, sizeof(PaddleObject));
     PaddleObject *paddleData = (PaddleObject *)outPaddle->objectData;
-    paddleData->posX = SDL_WINDOWPOS_CENTERED;
-    paddleData->posY = GetGame()->h - 100;
-    paddleData->width = 128;
-    paddleData->height = 32;
-
-    char *filepath = getcwd(NULL, 260);
-    if(NULL == filepath) {
-        printf_s("could not get cwd for filepath");
-        return FALSE;
-    }
-    strcat_s(filepath, 260, "\\assets\\sprites\\PaddleTest.png");
-    printf_s("%s\n", filepath);
-    
-    paddleData->sprite = IMG_Load(filepath);
-    if(NULL == paddleData->sprite) {
+    outPaddle->rect.w = 128;
+    outPaddle->rect.h = 32;
+    outPaddle->rect.x = GetGame()->w / 2 - outPaddle->rect.w / 2;
+    outPaddle->rect.y = GetGame()->h - 100;
+    SDL_Surface *sprite = IMG_Load( ".\\assets\\sprites\\PaddleTest.png");
+    if(NULL == sprite) {
         printf_s("Failed to load image: %s\n", IMG_GetError());
-        free(filepath);
         return FALSE;
     }
+    paddleData->sprite = SDL_CreateTextureFromSurface(GetGame()->renderer, sprite);
+    if(NULL == paddleData->sprite) {
+        printf_s("Failed to create sprite texture: %s\n", SDL_GetError());
+        return FALSE;
+    }
+    SDL_FreeSurface(sprite);
 
-    free(filepath);
+    outPaddle->Update = UpdatePaddle;
     outPaddle->Render = RenderPaddle;
 
     return TRUE;
 }
 
-void UpdatePaddle(f32 deltaTime, void *objectData) {
+void UpdatePaddle(f32 deltaTime, void *paddle) {
+    Object *paddleObj = (Object *)paddle;
+    if(OBJECT_TYPE_PADDLE != paddleObj->objectType) {
+        printf_s("Object Type does not match expected type.");
+        return;
+    }
+    PaddleObject *paddleData = (PaddleObject *)paddleObj->objectData;
+    
+    if(GetKeyHeld('d')) {
+        paddleData->horizontalVelocity = 200;
+    } else if (GetKeyHeld('a')) {
+        paddleData->horizontalVelocity = -200;
+    } else {
+        paddleData->horizontalVelocity = 0;
+    }
 
+    if(paddleData->horizontalVelocity) {
+        paddleObj->rect.x += paddleData->horizontalVelocity * deltaTime;
+    }
+
+    if(paddleObj->rect.x < 0) {
+        paddleObj->rect.x = 0;
+    }
+    if(paddleObj->rect.x + paddleObj->rect.w > GetGame()->w + 1) {
+        paddleObj->rect.x = GetGame()->w - paddleObj->rect.w;
+    }
 }
 
-void RenderPaddle(void *objectData) {
-    
+void RenderPaddle(void *paddle) {
+    Object *paddleObj = (Object *)paddle;
+    if(OBJECT_TYPE_PADDLE != paddleObj->objectType) {
+        printf_s("Object Type does not match expected type.");
+        return;
+    }
+    PaddleObject *paddleData = (PaddleObject *)paddleObj->objectData;
+
+    SDL_RenderCopy(GetGame()->renderer, paddleData->sprite, NULL, &paddleObj->rect);
 }
 
 void DestroyPaddle(Object *paddle) {
+    if(OBJECT_TYPE_PADDLE != paddle->objectType) {
+        printf_s("Object Type does not match expected type.");
+        return;
+    }
     PaddleObject *paddleData = (PaddleObject *)paddle->objectData;
-    SDL_FreeSurface(paddleData->sprite);
     SDL_memset(paddleData, 0, sizeof(PaddleObject));
 
     free(paddle->objectData);

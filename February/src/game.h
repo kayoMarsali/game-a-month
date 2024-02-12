@@ -13,7 +13,12 @@ KINLINE b8 GameIsRunning() {
    return (GetGame() != NULL) ? GetGame()->isRunning : FALSE;
 }
 
-void UpdateGame();
+void UpdateGame(float deltaTime);
+
+b8 GetKeyPressed(char key);
+b8 GetKeyHeld(char key);
+b8 GetKeyReleased(char key);
+
 void RenderGame();
 
 void ShutdownGame();

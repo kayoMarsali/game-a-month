@@ -1,7 +1,6 @@
 #include "game.h"
 #include "objects/paddle.h"
-
-#include <stdio.h>
+#include "objects/ball.h"
 
 
 Game *game;
@@ -59,6 +58,14 @@ b8 InitializeGame() {
     }
     SDL_memset(game->paddle, 0, sizeof(Object));
     InitializePaddle(game->paddle);
+    
+    game->ball = malloc(sizeof(Object));
+    if(!game->ball) {
+        printf_s("failed to allocate memory for ball object.");
+        return FALSE;
+    }
+    SDL_memset(game->ball, 0, sizeof(Object));
+    InitializeBall(game->ball);
 
 
     game->isRunning = TRUE;
@@ -90,11 +97,10 @@ void PollEvents() {
     }
 }
 
-void UpdateGame() {
+void UpdateGame(float deltaTime) {
     PollEvents();
-    if(KeyPressed(SDLK_w)) {
-        printf_s("'w' was pressed.\n");
-    }
+    game->paddle->Update(deltaTime, game->paddle);
+    game->ball->Update(deltaTime, game->ball);
 };
 
 void HandleInput(SDL_Event ev) {
@@ -109,16 +115,34 @@ void HandleInput(SDL_Event ev) {
     }
 }
 
+b8 GetKeyPressed(char key) {
+    return KeyPressed(key);
+}
+b8 GetKeyHeld(char key) {
+    return keyWasPressed[key];
+}
+b8 GetKeyReleased(char key) {
+    return KeyReleased(key);
+}
+
+
 void RenderGame() {
     SDL_SetRenderDrawColor(game->renderer, 0, 0, 20, 255);
     SDL_RenderClear(game->renderer);
     
-    game->paddle->Render(game->paddle->objectData);
+    game->paddle->Render(game->paddle);
+    game->ball->Render(game->ball);
 
     SDL_RenderPresent(game->renderer);
 }
 
 void ShutdownGame() {
+    DestroyBall(game->ball);
+    DestroyPaddle(game->paddle);
+    TTF_CloseFont(game->font);
+    TTF_Quit();
+    IMG_Quit();
+    SDL_Quit();
     free(game);
     isActive = FALSE;
 }
