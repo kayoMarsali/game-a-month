@@ -1,6 +1,7 @@
 #include "game.h"
 #include "objects/paddle.h"
 #include "objects/ball.h"
+#include "objects/brick.h"
 
 
 Game *game;
@@ -65,9 +66,31 @@ b8 InitializeGame() {
         return FALSE;
     }
     SDL_memset(game->ball, 0, sizeof(Object));
-    InitializeBall(game->ball);
+    InitializeBall(game->ball); 
 
+    game->brickRows = 7;
+    game->brickColumns = 15;
+    game->bricks = malloc(sizeof(Object)*(game->brickColumns * game->brickRows));
+    if(!game->bricks) {
+        printf_s("failed to allocate memory for brick list.");
+        return FALSE;
+    }
+    SDL_memset(game->bricks, 0, sizeof(Object)*(game->brickColumns * game->brickRows));
+    for (i16 y = 0; y < game->brickRows; y++)
+    {
+        for (i16 x = 0; x < game->brickColumns; x++)
+        {
+            i32 brickIndex = x+y*game->brickColumns;
+            Object *brickObj = &game->bricks[brickIndex];
+            brickObj->rect.w = 32;
+            brickObj->rect.h = 32;
+            brickObj->rect.x = 150+(x*brickObj->rect.w);
+            brickObj->rect.y = 50+(y*brickObj->rect.h);
 
+            InitializeBrick(brickObj, brickIndex%4);
+        }
+    }
+    
     game->isRunning = TRUE;
 
     return TRUE;
@@ -92,6 +115,10 @@ void PollEvents() {
             break;
         case SDL_KEYUP:
         case SDL_KEYDOWN:
+            if(ev.key.keysym.sym == SDLK_ESCAPE) {
+                game->isRunning = FALSE;
+                break;
+            }
             HandleInput(ev);
             break;
     }
@@ -101,6 +128,15 @@ void UpdateGame(float deltaTime) {
     PollEvents();
     game->paddle->Update(deltaTime, game->paddle);
     game->ball->Update(deltaTime, game->ball);
+    for (i16 y = 0; y < game->brickRows; y++)
+    {
+        for (i16 x = 0; x < game->brickColumns; x++)
+        {
+            i32 brickIndex = x+y*game->brickColumns;
+            Object *brickObj = &game->bricks[brickIndex];
+            brickObj->Update(deltaTime, brickObj);
+        }
+    }
 };
 
 void HandleInput(SDL_Event ev) {
@@ -125,6 +161,10 @@ b8 GetKeyReleased(char key) {
     return KeyReleased(key);
 }
 
+i32 GetPaddleVel() {
+    return GetPaddleVelocity(game->paddle);
+}
+
 
 void RenderGame() {
     SDL_SetRenderDrawColor(game->renderer, 0, 0, 20, 255);
@@ -132,13 +172,33 @@ void RenderGame() {
     
     game->paddle->Render(game->paddle);
     game->ball->Render(game->ball);
+    for (i16 y = 0; y < game->brickRows; y++)
+    {
+        for (i16 x = 0; x < game->brickColumns; x++)
+        {
+            Object *brickObj = &game->bricks[x+y*game->brickColumns];
+            game->bricks->Render(brickObj);
+        }
+    }
+    
 
     SDL_RenderPresent(game->renderer);
 }
 
 void ShutdownGame() {
+    for (i16 y = 0; y < game->brickRows; y++)
+    {
+        for (i16 x = 0; x < game->brickColumns; x++)
+        {
+            Object *brickObj = &game->bricks[x+y*game->brickColumns];
+            DestroyBrick(brickObj);
+        }
+    }
+    free(game->bricks);
     DestroyBall(game->ball);
+    free(game->ball);
     DestroyPaddle(game->paddle);
+    free(game->paddle);
     TTF_CloseFont(game->font);
     TTF_Quit();
     IMG_Quit();

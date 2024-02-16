@@ -27,9 +27,9 @@ b8 InitializePaddle(Object *outPaddle) {
 
     SDL_memset(outPaddle->objectData, 0, sizeof(PaddleObject));
     PaddleObject *paddleData = (PaddleObject *)outPaddle->objectData;
-    outPaddle->rect.w = 128;
-    outPaddle->rect.h = 32;
-    outPaddle->rect.x = GetGame()->w / 2 - outPaddle->rect.w / 2;
+    outPaddle->rect.w = 64;
+    outPaddle->rect.h = 16;
+    outPaddle->rect.x = (GetGame()->w / 2) - (outPaddle->rect.w / 2);
     outPaddle->rect.y = GetGame()->h - 100;
     SDL_Surface *sprite = IMG_Load( ".\\assets\\sprites\\PaddleTest.png");
     if(NULL == sprite) {
@@ -98,4 +98,14 @@ void DestroyPaddle(Object *paddle) {
 
     free(paddle->objectData);
     SDL_memset(paddle, 0, sizeof(Object));
+}
+
+i32 GetPaddleVelocity(Object *paddle) {
+    if(OBJECT_TYPE_PADDLE != paddle->objectType) {
+        printf_s("Object Type does not match expected type.");
+        return 0;
+    }
+    PaddleObject *paddleData = (PaddleObject *)paddle->objectData;
+
+    return paddleData->horizontalVelocity;
 }

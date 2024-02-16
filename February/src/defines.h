@@ -26,6 +26,8 @@ typedef int b32;
 #define FALSE 0
 #define TRUE 1
 
+#define GetBit(x) (1<<x)
+
 #ifdef _MSC_VER
 #define KINLINE __forceinline
 #define KNOINLINE __declspec(noinline)

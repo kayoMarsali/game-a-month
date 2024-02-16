@@ -20,5 +20,7 @@ Building KayoBreaker, requires SDL2, SDL2_ttf, SDL2_image, and GCC.
 
 # Requirements
 SDL2 https://www.libsdl.org/
+
 SDL2_ttf https://github.com/libsdl-org/SDL_ttf
+
 SDL2_image https://github.com/libsdl-org/SDL_image
