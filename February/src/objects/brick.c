@@ -1,12 +1,14 @@
 #include "brick.h"
 #include "ball.h"
 #include "game.h"
+#include "scene/game_scene.h"
 
 typedef struct BrickObject {
     i8 hits;
     b8 isHit;
     SDL_Texture *sprite;
 } BrickObject;
+
 
 void UpdateBrick(f32 deltaTime, void *brick);
 void RenderBrick(void *brick);
@@ -55,7 +57,7 @@ b8 InitializeBrick(Object *outBrick, u8 spriteIndex) {
     }
     SDL_FreeSurface(sprite);
 
-    brickData->hits = 3;
+    brickData->hits = 1;
 
     outBrick->Update = UpdateBrick;
     outBrick->Render = RenderBrick;
@@ -84,6 +86,7 @@ void UpdateBrick(f32 deltaTime, void *brick) {
     if(brickData->hits == 0) {
         brickObj->isActive = FALSE;
         brickObj->isRendered = FALSE;
+        DecBricks(GetGame()->activeScene);
     }
 
     brickData->isHit = FALSE;

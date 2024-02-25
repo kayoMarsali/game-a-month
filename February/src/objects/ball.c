@@ -1,10 +1,12 @@
 #include "ball.h"
 #include "game.h"
+#include "scene/game_scene.h"
 #include "brick.h"
 
 typedef struct BallObject {
     i8 ballsLeft;
     b8 ballReleased;
+    b8 ballCollided;
     b8 horizontalBounce, verticalBounce;
     i32 horizontalVelocity, verticalVelocity;
     SDL_Texture *sprite;
@@ -27,12 +29,14 @@ b8 InitializeBall(Object *outBall) {
         return FALSE;
     }
 
-        SDL_memset(outBall->objectData, 0, sizeof(BallObject));
+    const Object *paddle = GetPaddle(GetGame()->activeScene);
+    SDL_memset(outBall->objectData, 0, sizeof(BallObject));
+
     BallObject *ballData = (BallObject *)outBall->objectData;
     outBall->rect.w = 15;
     outBall->rect.h = 15;
-    outBall->rect.x = GetGame()->paddle->rect.x+(GetGame()->paddle->rect.w/2)-8;
-    outBall->rect.y = GetGame()->paddle->rect.y-15;
+    outBall->rect.x = paddle->rect.x+(paddle->rect.w/2)-8;
+    outBall->rect.y = paddle->rect.y-15;
     SDL_Surface *sprite = IMG_Load( ".\\assets\\sprites\\BallTest.png");
     if(NULL == sprite) {
         printf_s("Failed to load image: %s\n", IMG_GetError());
@@ -54,10 +58,12 @@ b8 InitializeBall(Object *outBall) {
 }
 
 b8 IsColliding(Object *brick, Object *ball) {
+    BallObject *ballData = (BallObject *)ball->objectData;
+
     if(!brick->isActive) {
         return FALSE;
     }
-    if(GetGame()->ballCollided) {
+    if(ballData->ballCollided) {
         //ball has already collided with something, quit.
         return FALSE;
     }
@@ -66,76 +72,75 @@ b8 IsColliding(Object *brick, Object *ball) {
     i32 ballRadius = ball->rect.w/2+1;
     i32 brickX = brick->rect.x;
     i32 brickY = brick->rect.y;
-
-    BallObject *ballData = (BallObject *)ball->objectData;
     
 
-    //Top Left
-    i32 distX = SDL_abs(brickX - ballCenterX);
+    i32 distX = SDL_abs(brickX+ballRadius - ballCenterX);
     i32 distY = SDL_abs(brickY - ballCenterY);
     f32 distance = 0;
-
-    if(distX <= ballRadius) {
-        ballData->horizontalBounce = TRUE;
-    }
-    if(distY <= ballRadius) {
+    distance = SDL_sqrtf((distX*distX) + (distY*distY));
+    if (distance <= ballRadius) {
         ballData->verticalBounce = TRUE;
-    }
-    if(ballData->verticalBounce || ballData->horizontalBounce) {
-        distance = SDL_sqrtf((distX*distX) + (distY*distY));
-        if (distance <= ballRadius) {
-            return TRUE;
-        }
+        return TRUE;
     }
 
-    //Bottom Left
     distX = SDL_abs(brickX - ballCenterX);
-    distY = SDL_abs(brickY+brick->rect.h - ballCenterY);
-    if(distX <= ballRadius) {
+    distY = SDL_abs(brickY+ballRadius - ballCenterY);
+    distance = SDL_sqrtf((distX*distX) + (distY*distY));
+    if (distance <= ballRadius) {
         ballData->horizontalBounce = TRUE;
-    }
-    if(distY <= ballRadius) {
-        ballData->verticalBounce = TRUE;
-    }
-    if(ballData->verticalBounce || ballData->horizontalBounce) {
-        distance = SDL_sqrtf((distX*distX) + (distY*distY));
-        if (distance <= ballRadius) {
-            return TRUE;
-        }
+        return TRUE;
     }
 
-    //Bottom Right
-    distX = SDL_abs(brickX+brick->rect.w - ballCenterX);
-    distY = SDL_abs(brickY+brick->rect.h - ballCenterY);
-    if(distX <= ballRadius) {
-        ballData->horizontalBounce = TRUE;
-    }
-    if(distY <= ballRadius) {
-        ballData->verticalBounce = TRUE;
-    }
-    if(ballData->verticalBounce || ballData->horizontalBounce) {
-        distance = SDL_sqrtf((distX*distX) + (distY*distY));
-        if (distance <= ballRadius) {
-            return TRUE;
-        }
-    }
-
-    //Top Right
-    distX = SDL_abs(brickX+brick->rect.w - ballCenterX);
+    distX = SDL_abs(brickX+brick->rect.w-ballRadius - ballCenterX);
     distY = SDL_abs(brickY - ballCenterY);
-    if(distX <= ballRadius) {
-        ballData->horizontalBounce = TRUE;
-    }
-    if(distY <= ballRadius) {
+    distance = SDL_sqrtf((distX*distX) + (distY*distY));
+    if (distance <= ballRadius) {
         ballData->verticalBounce = TRUE;
+        return TRUE;
     }
-    if(ballData->verticalBounce || ballData->horizontalBounce) {
-        distance = SDL_sqrtf((distX*distX) + (distY*distY));
-        if (distance <= ballRadius) {
-            return TRUE;
-        }
+
+
+    distX = SDL_abs(brickX+brick->rect.w - ballCenterX);
+    distY = SDL_abs(brickY+ballRadius - ballCenterY);
+    distance = SDL_sqrtf((distX*distX) + (distY*distY));
+    if (distance <= ballRadius) {
+        ballData->horizontalBounce = TRUE;
+        return TRUE;
+    }
+
+    distX = SDL_abs(brickX+ballRadius - ballCenterX);
+    distY = SDL_abs(brickY+brick->rect.h - ballCenterY);
+    distance = SDL_sqrtf((distX*distX) + (distY*distY));
+    if (distance <= ballRadius) {
+        ballData->verticalBounce = TRUE;
+        return TRUE;
     }
     
+    distX = SDL_abs(brickX - ballCenterX);
+    distY = SDL_abs(brickY+brick->rect.h-ballRadius - ballCenterY);    
+    distance = SDL_sqrtf((distX*distX) + (distY*distY));
+    if (distance <= ballRadius) {
+        ballData->horizontalBounce = TRUE;
+        return TRUE;
+    }
+
+    distX = SDL_abs(brickX+brick->rect.w-ballRadius - ballCenterX);
+    distY = SDL_abs(brickY+brick->rect.h - ballCenterY);
+    distance = SDL_sqrtf((distX*distX) + (distY*distY));
+    if (distance <= ballRadius) {
+        ballData->verticalBounce = TRUE;
+        return TRUE;
+    }
+
+    distX = SDL_abs(brickX+brick->rect.w - ballCenterX);
+    distY = SDL_abs(brickY+brick->rect.h-ballRadius - ballCenterY);
+    distance = SDL_sqrtf((distX*distX) + (distY*distY));
+    if (distance <= ballRadius) {
+        ballData->horizontalBounce = TRUE;
+        return TRUE;
+    }
+
+
     ballData->horizontalBounce = FALSE;
     ballData->verticalBounce = FALSE;
     return FALSE;
@@ -148,7 +153,8 @@ void UpdateBall(f32 deltaTime, void *ball) {
         return;
     }
     BallObject *ballData = (BallObject *)ballObj->objectData;
-    GetGame()->ballCollided = FALSE;
+    ballData->ballCollided = FALSE;
+    const Object *paddle = GetPaddle(GetGame()->activeScene);
 
     if(!ballData->ballReleased) {
          if(GetKeyHeld('d')) {
@@ -165,32 +171,38 @@ void UpdateBall(f32 deltaTime, void *ball) {
         }
 
         
-        ballObj->rect.x = GetGame()->paddle->rect.x+(GetGame()->paddle->rect.w/2)-8;
+        ballObj->rect.x = paddle->rect.x+(paddle->rect.w/2)-8;
         return;
     }
+
     ballData->verticalBounce = FALSE;
     ballData->horizontalBounce = FALSE;
 
-    for (i16 y = 0; y < GetGame()->brickRows; y++)
+    BrickInfo *brickInfo = SDL_malloc(sizeof(BrickInfo));
+    GetBrickInfo(GetGame()->activeScene, brickInfo);
+    
+    for (i16 y = 0; y < brickInfo->brickRows; y++)
     {
-        for (i16 x = 0; x < GetGame()->brickColumns; x++)
+        for (i16 x = 0; x < brickInfo->brickColumns; x++)
         {
-            i32 brickIndex = x+y*GetGame()->brickColumns;
-            Object *brick = &GetGame()->bricks[brickIndex];
-            GetGame()->ballCollided = IsColliding(brick, ball);
-            if(GetGame()->ballCollided) {
+            i32 brickIndex = x+y*brickInfo->brickColumns;
+            Object *brick = &brickInfo->bricks[brickIndex];
+            ballData->ballCollided = IsColliding(brick, ball);
+            if(ballData->ballCollided) {
                 HitBrick(brick);
                 break;
             }
         }
-        if(GetGame()->ballCollided) {
+        if(ballData->ballCollided) {
                 break;
             }
     }
-    if(ballData->horizontalBounce && GetGame()->ballCollided) {
+
+    SDL_free(brickInfo);
+    if(ballData->horizontalBounce && ballData->ballCollided) {
         ballData->horizontalVelocity *= -1;
     }
-    if(ballData->verticalBounce && GetGame()->ballCollided) {
+    if(ballData->verticalBounce && ballData->ballCollided) {
         ballData->verticalVelocity *= -1;
     }
     ballObj->rect.x += ballData->horizontalVelocity * deltaTime;
@@ -202,18 +214,23 @@ void UpdateBall(f32 deltaTime, void *ball) {
     if(ballObj->rect.y < 0) {
         ballData->verticalVelocity *= -1;
     } else if(ballObj->rect.y > GetGame()->h) {
-        ballObj->rect.y = GetGame()->paddle->rect.y-ballObj->rect.h;
+        ballObj->rect.y = paddle->rect.y-ballObj->rect.h;
         ballData->ballReleased = FALSE;
         ballData->ballsLeft -= 1;
     }
 
-    if(((ballObj->rect.y + ballObj->rect.h) > GetGame()->paddle->rect.y) && 
-    (ballObj->rect.y < (GetGame()->paddle->rect.y + GetGame()->paddle->rect.h))) {
-        if(((ballObj->rect.x + ballObj->rect.w) > GetGame()->paddle->rect.x) &&
-        ballObj->rect.x < (GetGame()->paddle->rect.x + GetGame()->paddle->rect.w)) {
+    if(((ballObj->rect.y + ballObj->rect.h) > paddle->rect.y) && 
+    (ballObj->rect.y < paddle->rect.y + paddle->rect.h)) {
+        if(((ballObj->rect.x + ballObj->rect.w) > paddle->rect.x) &&
+        ballObj->rect.x < (paddle->rect.x + paddle->rect.w)) {
             if(ballData->verticalVelocity > 0) {
                 ballData->verticalVelocity *= -1;
-                ballData->horizontalVelocity += GetPaddleVel()*0.5f;
+                ballData->horizontalVelocity += GetPaddleVel(GetGame()->activeScene)*0.5f;
+                if(ballData->horizontalVelocity >= 350) {
+                    ballData->horizontalVelocity = 350;
+                } else if (ballData->horizontalVelocity <= -350) {
+                    ballData->horizontalVelocity = -350;
+                }
             }
         }
     }
@@ -228,6 +245,14 @@ void RenderBall(void *ball) {
     BallObject *ballData = (BallObject *)ballObj->objectData;
 
     SDL_RenderCopy(GetGame()->renderer, ballData->sprite, NULL, &ballObj->rect);
+
+    i32 livesStart = GetGame()->w - (ballObj->rect.w+5)*3;
+    for(i32 i = 0; i < ballData->ballsLeft; ++i) {
+        SDL_RenderCopy(GetGame()->renderer, ballData->sprite, NULL, &(SDL_Rect){livesStart + (ballObj->rect.w+5)*i,
+                                                                    GetGame()->h - GetLivesSurfH(GetGame()->activeScene) + 4,
+                                                                    ballObj->rect.w,
+                                                                    ballObj->rect.h});
+    }
 }
 
 void DestroyBall(Object *ball) {
@@ -241,4 +266,14 @@ void DestroyBall(Object *ball) {
     free(ball->objectData);
     SDL_memset(ball, 0, sizeof(Object));
 
+}
+
+
+i32 GetBallsLeft(Object *ball) {
+    if(OBJECT_TYPE_BALL != ball->objectType) {
+        printf_s("Object Type does not match expected type.");
+        return -1;
+    }
+
+    return ((BallObject *)ball->objectData)->ballsLeft;
 }

@@ -19,8 +19,6 @@ b8 GetKeyPressed(char key);
 b8 GetKeyHeld(char key);
 b8 GetKeyReleased(char key);
 
-i32 GetPaddleVel();
-
 void RenderGame();
 
 void ShutdownGame();

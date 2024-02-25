@@ -5,3 +5,5 @@
 
 b8 InitializeBall(Object *outBall);
 void DestroyBall(Object *ball);
+
+i32 GetBallsLeft(Object *ball);

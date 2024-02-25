@@ -53,3 +53,7 @@ dkms.conf
 
 [Bb]in
 .vscode
+
+# Godot 4+ specific ignores
+.godot/
+March/

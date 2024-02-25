@@ -5,15 +5,6 @@
 #include <SDL_ttf.h>
 #include <SDL_image.h>
 
-
-
-typedef enum Direction {
-    DIRECTION_TOP = GetBit(0),
-    DIRECTION_BOTTOM = GetBit(1),
-    DIRECTION_LEFT = GetBit(2),
-    DIRECTION_RIGHT = GetBit(3)
-} Direction;
-
 typedef enum ObjectTypes {
     OBJECT_TYPE_NONE = 0,
     OBJECT_TYPE_PADDLE = 1,
@@ -60,17 +51,8 @@ typedef struct Game {
     char *name;
     u32 x, y, w, h;
 
-    Object *paddle;
-    Object *ball;
-    b8 ballCollided;
-
-    
-    i32 brickRows;
-    i32 brickColumns;
-    Object *bricks;
-
-    u32 score;
-    u32 highscore;
+    Scene* activeScene;
+    Scene* secondaryScene;
 
     b8 gameover;
 } Game;
