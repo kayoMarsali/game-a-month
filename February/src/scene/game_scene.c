@@ -1,9 +1,15 @@
 #include "game_scene.h"
-#include "text.h"
 #include "game.h"
 #include "objects/ball.h"
 #include "objects/brick.h"
 #include "objects/paddle.h"
+
+/*
+Game Scene Text 
+*/
+const char *livesTextString = "Lives:";
+const char *winTextString = "You Win!";
+const char *loseTextString = "You Lose.";
 
 typedef struct GameScene {
     b8 gameover;
@@ -149,6 +155,9 @@ void UpdateGameScene(f32 deltaTime, void* scene){
         printf_s("Scene Type does not match expected type.");
         return;
     }
+    if(!gameScene->isActive) {
+        return;
+    }
     GameScene* gameData = (GameScene*)gameScene->internalData;
     gameData->gameover = ((GetBallsLeft(gameData->ball) <= 0) || (gameData->noBricks <= 0));
     if(!gameData->gameover) {
@@ -173,6 +182,9 @@ void RenderGameScene(void* scene) {
         return;
     }
     GameScene *gameData = (GameScene*)gameScene->internalData;
+    if(!gameScene->isRendered) {
+        return;
+    }
     SDL_Texture *text = NULL;
     if(!gameData->gameover) {
         text = SDL_CreateTextureFromSurface(GetGame()->renderer, gameData->livesSurf);

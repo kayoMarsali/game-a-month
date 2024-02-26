@@ -1,5 +1,6 @@
 #include "game.h"
 #include "scene/game_scene.h"
+#include "scene/title_scene.h"
 #include "objects/paddle.h"
 #include "objects/ball.h"
 #include "objects/brick.h"
@@ -15,6 +16,15 @@ static b8 keyIsPressed[256];
 #define KeyReleased(x) !keyIsPressed[x] && keyWasPressed[x]
 
 void HandleInput(SDL_Event ev);
+
+void ResetGame() {
+    DestroyGameScene(game->activeScene);
+    DestroyTitleScene(game->secondaryScene);
+    SDL_memset(game->activeScene, 0, sizeof(Scene));
+    SDL_memset(game->secondaryScene, 0, sizeof(Scene));
+    InitializeGameScene(game->activeScene);
+    InitializeTitleScene(game->secondaryScene);
+}
 
 b8 InitializeGame() {
     game = malloc(sizeof(Game));
@@ -64,6 +74,18 @@ b8 InitializeGame() {
         return FALSE;
     }
     
+
+    game->secondaryScene = SDL_malloc(sizeof(Scene));
+    if(NULL == game->secondaryScene) {
+        printf_s("Failed to allocate memory for secondary scene");
+        return FALSE;
+    }
+    SDL_memset(game->secondaryScene, 0, sizeof(Scene));
+    if(!InitializeTitleScene(game->secondaryScene)) {
+        printf_s("Failed to initialize title scene.");
+        return FALSE;
+    }
+
     game->isRunning = TRUE;
 
     return TRUE;
@@ -92,6 +114,9 @@ void PollEvents() {
                 game->isRunning = FALSE;
                 break;
             }
+            if(ev.key.keysym.sym == SDLK_r) {
+                ResetGame();
+            }
             HandleInput(ev);
             break;
     }
@@ -100,6 +125,7 @@ void PollEvents() {
 void UpdateGame(float deltaTime) {
     PollEvents();
     game->activeScene->Update(deltaTime, game->activeScene);
+    game->secondaryScene->Update(deltaTime, game->secondaryScene);
 };
 
 void HandleInput(SDL_Event ev) {
@@ -130,6 +156,7 @@ void RenderGame() {
     SDL_RenderClear(game->renderer);
     
     game->activeScene->Render(game->activeScene);
+    game->secondaryScene->Render(game->secondaryScene);
     
 
     SDL_RenderPresent(game->renderer);
@@ -140,6 +167,11 @@ void ShutdownGame() {
         DestroyGameScene(game->activeScene);
         SDL_free(game->activeScene);
         game->activeScene = NULL;
+    }
+    if(NULL != game->secondaryScene) {
+        DestroyTitleScene(game->secondaryScene);
+        SDL_free(game->secondaryScene);
+        game->secondaryScene = NULL;
     }
     TTF_CloseFont(game->font);
     TTF_Quit();
