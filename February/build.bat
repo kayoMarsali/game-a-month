@@ -21,7 +21,7 @@ FOR /R %%f in (*.c) do (
 
 echo "Files:" %cFilenames%
 
-SET assembly=KayoPong
+SET assembly=KayoBreaker
 if "%CONFIG%" == "release" goto release
 SET compilerFlags=-g
 SET defines=-D_DEBUG
@@ -41,6 +41,7 @@ gcc %cFilenames% %compilerFlags% -o ./bin/%CONFIG%\%assembly%.exe %defines% %inc
 ECHO "Copying DLL(s)..."
 copy /y "%SDL2%\lib\x64\SDL2.dll" /b ".\bin\%CONFIG%\"
 copy /y "%SDL2_ttf%\lib\x64\SDL2_ttf.dll" /b ".\bin\%CONFIG%\"
+copy /y "%SDL2_image%\lib\x64\SDL2_image.dll" /b ".\bin\%CONFIG%\"
 xcopy "assets" "bin\%CONFIG%\assets" /h /i /c /k /e /r /y
 goto end
 
@@ -48,6 +49,7 @@ goto end
 ECHO "Cleaning..."
 if exist ".\bin\" rmdir /S /Q ".\bin\"
 goto end
+
 :notdefined
 ECHO "Config not defined, please add 'release' 'debug' or 'clean' to the command line when running ./build.bat."
 

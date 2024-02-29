@@ -1,0 +1,11 @@
+KayoBreaker 
+A brick breaking game by KayoMarsali
+
+techstack:
+VSCode     - main code editor
+c          - programming language
+SDL2       - framework
+SDL2_image - image processing
+SDL2_ttf   - text
+
+summary:

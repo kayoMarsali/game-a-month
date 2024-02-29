@@ -1,5 +1,9 @@
 #pragma once
 
+#include <stdio.h>
+#include <direct.h>
+#include <string.h>
+
 //Signed Integer Types
 typedef signed char i8;
 typedef signed short i16;
@@ -19,10 +23,10 @@ typedef double f64;
 typedef char b8;
 typedef int b32;
 
-typedef const char* string;
-
 #define FALSE 0
 #define TRUE 1
+
+#define GetBit(x) (1<<x)
 
 #ifdef _MSC_VER
 #define KINLINE __forceinline
